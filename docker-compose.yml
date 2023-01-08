@@ -1,0 +1,39 @@
+version: '3.2'
+
+services: 
+  prom-pushgateway:
+    image: prom/pushgateway
+    ports: 
+      - 9091:9091
+    external_links:
+      - "prom-pushgateway"
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - 9090:9090
+    external_links:
+      - "prometheus"
+  grafana:
+    image: grafana/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports: 
+      - 3000:3000
+    external_links:
+      - "grafana"
+  ecoflow-mqtt-service:
+    build:
+      context: ./src
+      dockerfile: EcoflowMqtt.Service/Dockerfile
+    environment:
+      - Ecoflow__Email=<enter your ecoflow account email>
+      - Ecoflow__Password=<enter your ecoflow account password>
+      - Ecoflow__SerialIds__0=<enter your ecoflow device serial number>
+      - Prometheus__PushEndpoint=http://prom-pushgateway:9091
